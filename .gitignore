@@ -1,0 +1,6 @@
+.*
+*.pyc
+*.swp
+*.*~
+!.gitignore
+mnist.npz
