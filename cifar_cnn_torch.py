@@ -9,7 +9,7 @@ from torchvision import datasets, transforms
 
 batch_size = 32
 epochs = 100
-learning_rate =1e-1
+learning_rate =0.1
 class_num = 10
 filter1_size = 32
 filter2_size = 32
@@ -17,6 +17,7 @@ filter3_size = 64
 filter4_size = 64
 hide1_num = 1600
 hide2_num = 512
+hide3_num = 256
 
 
 kwargs = {'num_workers': 1, 'pin_memory': True} if 0 else {}
@@ -61,7 +62,9 @@ class Net(nn.Module):
         
         self.layer5 = nn.Linear(hide1_num,hide2_num)
         self.layer5_drop = nn.Dropout2d(0.5)
-        self.layer6 = nn.Linear(hide2_num,class_num)
+        self.layer6 = nn.Linear(hide2_num,hide3_num)
+        self.layer6_drop = nn.Dropout2d(0.5)
+        self.layer7 = nn.Linear(hide3_num,class_num)
 
     def forward(self,x):
         x = F.relu(self.conv1(x))
@@ -70,7 +73,8 @@ class Net(nn.Module):
         x = F.relu(F.max_pool2d(self.conv4_drop(self.conv4(x)),2))
         x = x.view(-1, hide1_num)
         x = F.relu(self.layer5_drop(self.layer5(x)))
-        x = self.layer6(x)
+        x = F.relu(self.layer6_drop(self.layer6(x)))
+        x = self.layer7(x)
         return F.log_softmax(x,dim=1)
 
 model = Net(filter1_size,filter2_size,filter3_size,filter4_size,hide1_num,hide2_num,class_num)
