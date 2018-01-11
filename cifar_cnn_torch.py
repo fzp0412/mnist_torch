@@ -15,7 +15,9 @@ filter1_size = 32
 filter2_size = 32
 filter3_size = 64
 filter4_size = 64
-hide1_num = 1600
+filter5_size = 128
+filter6_size = 128
+hide1_num = 1152
 hide2_num = 512
 hide3_num = 256
 
@@ -60,21 +62,33 @@ class Net(nn.Module):
                         )
         self.conv4_drop = nn.Dropout2d(0.25)
         
-        self.layer5 = nn.Linear(hide1_num,hide2_num)
-        self.layer5_drop = nn.Dropout2d(0.5)
-        self.layer6 = nn.Linear(hide2_num,hide3_num)
-        self.layer6_drop = nn.Dropout2d(0.5)
-        self.layer7 = nn.Linear(hide3_num,class_num)
+        self.conv5 = nn.Sequential(
+                        nn.Conv2d(filter4_size,filter5_size,kernel_size=3),
+                        nn.BatchNorm2d(filter5_size)
+                        )
+        self.conv6 = nn.Sequential(
+                        nn.Conv2d(filter5_size,filter6_size,kernel_size=3),
+                        nn.BatchNorm2d(filter6_size)
+                        )
+        self.conv6_drop = nn.Dropout2d(0.25)
+        
+        self.layer1 = nn.Linear(hide1_num,hide2_num)
+        self.layer1_drop = nn.Dropout2d(0.5)
+        self.layer2 = nn.Linear(hide2_num,hide3_num)
+        self.layer2_drop = nn.Dropout2d(0.5)
+        self.layer3 = nn.Linear(hide3_num,class_num)
 
     def forward(self,x):
         x = F.relu(self.conv1(x))
         x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)),2))
         x = F.relu(self.conv3(x))
-        x = F.relu(F.max_pool2d(self.conv4_drop(self.conv4(x)),2))
+        x = F.relu(self.conv4_drop(self.conv4(x)))
+        x = F.relu(self.conv5(x))
+        x = F.relu(F.max_pool2d(self.conv6_drop(self.conv6(x)),2))
         x = x.view(-1, hide1_num)
-        x = F.relu(self.layer5_drop(self.layer5(x)))
-        x = F.relu(self.layer6_drop(self.layer6(x)))
-        x = self.layer7(x)
+        x = F.relu(self.layer1_drop(self.layer1(x)))
+        x = F.relu(self.layer2_drop(self.layer2(x)))
+        x = self.layer3(x)
         return F.log_softmax(x,dim=1)
 
 model = Net(filter1_size,filter2_size,filter3_size,filter4_size,hide1_num,hide2_num,class_num)
